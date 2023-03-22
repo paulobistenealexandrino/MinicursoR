@@ -143,11 +143,68 @@ knitr::kable(conectivoOU)
 
 ## Funções
 
-Funções são ferramentas, porções de código reutilizáveis. E
+Funções são ferramentas, porções de código reutilizáveis. Elas nos permitem realizar os mais variados tipos de operações, seja criar ou modificar objetos, realizar comandos no computador, e muito mais. 
+
+Funções quase sempre recebem argumentos, de forma a ajustar seu comportamento de acordo com algum objetivo específico. Alguns argumentos são obrigatórios, outros opicionais, ou seja, possuem valores pré-definidos.
+
+Caso queira obter mais informações sobre uma função, você pode acessar sua documentação. A documentação contém tudo, ou a maior parte, do que se precisa saber sore uma função: quais seus argumentos, como eles se comportam, quais os valores pré-definidos. Para acessar a documentação basta digitar um ponto de interrogação seguido do nome da função.
+
+### Aplicando funções em vetores numéricos
+```{r}
+# Criar um vetor, ou concatenar vetores: c()
+alturas <- c(1.54, 1.92, 1.67, 1.72, 1.78)
+alturas
+
+# Mínimo: min()
+min(alturas)
+
+# Máximo: max()
+max(alturas)
+
+# Somatório: sum()
+sum(alturas)
+
+# Tamanho de um vetor: length()
+length(alturas)
+
+# Ordenar um vetor em ordem crescente: sort()
+sort(alturas)
+
+# A função sort possui o argumento opcional decreasing = FALSE. 
+# Para ordenar a lista de forma decrescente, podemos alterá-lo.
+sort(alturas, decreasing = TRUE)
+
+# Criar uma sequencia de números: seq()
+seq(from = 1, to = 50, by = 3)
+
+# Podemos substituir, por exemplo seq(from = x, to = y, by = 1)
+3:15
+```
+
+### Estatísticas Descritivas
+
+```{r}
+# Média: mean()
+mean(alturas)
+
+# Variância: var()
+var(alturas)
+
+# Desvio padrão: sd()
+sd(alturas)
+
+# Mediana: median()
+median(alturas)
+
+# Covariância: cov()
+
+```
+
+
 
 ## Baixando e excutando pacotes externos
 
-Para ter acesso a um novo pacote, será necessário instalá-lo primeiro. Esse procedimento só é necessário ser feito uma vez, a não ser que o R precise ser reinstalado.Sempre que iniciar uma sessão será necessário carregar os pacotes que serão utilizados.
+Até agora utilizamos apenas funções pré-instaladas no R. Para ter acesso a novos pacotes, será necessário instalá-los primeiro. Esse procedimento só é necessário ser feito uma vez, a não ser que o R precise ser reinstalado. Sempre que iniciar uma sessão será necessário carregar os pacotes que serão utilizados.
 
 ```{r, eval=FALSE}
 # Instalando o tidyverse
