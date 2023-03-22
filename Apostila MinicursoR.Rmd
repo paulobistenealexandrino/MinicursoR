@@ -1,0 +1,255 @@
+---
+title: "Introdução ao R para Análise de Dados"
+subtitle: "Minicurso"
+author: "Paulo Alexandrino"
+header-includes:
+   - \usepackage[brazil]{babel}
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    latex_engine: xelatex
+date: "Março 2023"
+documentclass: "report"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Carregando pacotes necessários
+library(tidyverse)
+library(gapminder)
+library(formatR)
+
+# Carregando arquivos necessários
+gapminderCountries <- gapminder %>%
+  filter(country %in% c("Brazil", "Botswana", "Korea, Rep."))
+
+gapminder2007 <- gapminder %>%
+  filter(year == 2007)
+```
+
+
+# Introdução
+
+
+# Conceitos Fundamentais
+
+## Operadores
+
+### Operadores matemáticos
+
+A forma mais elementar de utilizar o R é como uma calculadora que nos permite realizar todo tipo de operação matemática desejada.
+
+```{r}
+# Soma (+)
+5 + 7
+
+# Subtração (-)
+10 - 16
+
+# Multiplicação (*)
+2 * 7
+
+# Exponenciação (^)
+2^4
+
+# Divisão (/)
+5 / 2
+
+# Divisão Inteira (%/%)
+5 %/% 2
+
+# Módulo - Resto da divisão inteira (%%)
+5 %% 2
+```
+
+### Operadores lógicos
+
+Operadores lógicos nos permitem estabelecer relações entre objetos e julgar proposições (orações declarativas) como verdadeiras (`TRUE`) ou falsas (`FALSE`). Serão muito úteis a construção de filtros.
+
+```{R}
+# Menor que (<)
+5 < 3
+
+# Menor ou igual que (<=)
+2.5 <= 7
+
+# Maior que (>)
+10 > 15
+
+# Maior ou igual que (>=)
+11 >= 11
+
+# Igual a (==)
+2 == 3
+
+# Diferente de (!=)
+5 != 4
+```
+
+A negação de uma proposição é seu inverso lógico.
+
+```{r}
+# Negação (!)
+2 > 5
+!(2 > 5)
+```
+
+Os conectivos de conjunção ($\wedge$, lê-se `E`) e disjunção ($\vee$, lê-se `OU`) são operadores lógicos que permitem criar proposições compostas. Sejam $p$ e $q$ proposições quaisquer:
+
+* A conjunção $p \wedge q$ é verdadeira se $p$ e $q$ são ambas verdadeiras; se ao menos uma delas for falsa, $p \wedge q$ é falsa.
+
+```{r, echo=FALSE}
+conectivoE <- data.frame(
+  p = c("V","V","F","F"),
+  q = c("V","F","V","F"),
+  pEq = c("V","F","F","F")
+)
+
+colnames(conectivoE) <- c("p","q","p ^ q")
+
+knitr::kable(conectivoE)
+```
+
+```{r}
+# E (&)
+(2 > 1) & (3 != 0)
+(3 < 2) & (5 < 11)
+```
+
+* A disjunção $p \vee q$ é verdadeira se $p$ e $q$ se ao menos uma das proposições $p$ ou $q$ é verdadeira; se $p$ e $q$ são ambas falsas, então $p \vee q$ é falsa.
+
+```{r, echo=FALSE}
+conectivoOU <- data.frame(
+  p = c("V","V","F","F"),
+  q = c("V","F","V","F"),
+  pOUq = c("V","V","V","F")
+)
+
+colnames(conectivoOU) <- c("p","q","p V q")
+
+knitr::kable(conectivoOU)
+```
+
+```{r}
+# OU (|)
+(3 < 2) | (5 < 11)
+(5 == 6) | (12 < 8)
+```
+
+## Variáveis e Tipos de Dados
+
+## Funções
+
+Funções são ferramentas, porções de código reutilizáveis. E
+
+## Baixando e excutando pacotes externos
+
+Para ter acesso a um novo pacote, será necessário instalá-lo primeiro. Esse procedimento só é necessário ser feito uma vez, a não ser que o R precise ser reinstalado.Sempre que iniciar uma sessão será necessário carregar os pacotes que serão utilizados.
+
+```{r, eval=FALSE}
+# Instalando o tidyverse
+install.packages("tidyverse")
+
+# Carregando o tidyverse
+library("tidyverse")
+```
+
+O `tidyverse` é um conjunto de pacotes que juntos fornecem uma ampla gama de ferramentas para análise de dados. Algumas dessas ferramentas apresentam versões otimizadas de funções já existentes no R.
+
+O operador pipe (`%>%`) permite substituir o aninhamento de funções por uma cadeia de operação, o que torna os códigos mais legíveis. Veremos aplicações do pipe e de algumas dos principais pacotes e funções do `tidyverse` nos capítulos posteriores.
+
+
+# Importação
+
+O R nos permite importar e utilizar em nossas análises uma série de diferentes tipos de arquivos. Isso pode ser feito por meio de funções nativas ou através de ferramentas disponíveis em pacotes criados por outros usuários. Por exemplo, o `tidyverse` possui os pacotes `readr`, que permite a leitura de arquivos como .csv, .fwf e .txt, e o pacote `readxl`, para leitura de arquivos Excel. 
+
+## Arquivos separados por vírgula (.csv)
+
+*Comma-separated values* é um formato de arquivo de texto onde as observações de uma tabela são representadas por linhas e as colunas são separadas por vírgula (no padrão americano) ou ponto-e-vírgula (no padrão europeu e brasileiro). No padrão separado por vírgula, o indicador decimal é o ponto; no padrãos separado por ponto-e-vírgula, a vírcula. É importante estar atento ao tipo de arquivo que estamos lidando.
+
+O dataset `gapminder` contém dados econômicos e demográficos para diversos países a cada 5 anos de 1952 a 2007. O arquivo que usaremos como exemplo apresenta uma amostra contendo as informações disponíveis para o Brasil, Botsuana e Coréia do Sul. Ele foi salvo em .csv com padrão separado por ponto-e-vírgula.
+
+```{r}
+# Primeira forma: ajustando os parâmetros da função read.csv
+gapminderCountries <- read.csv("Aula1/gapminderCountries.csv",
+                               sep = ";",
+                               dec = ",")
+
+# Segunda forma: utilizando a função read.csv2
+gapminderCountries <- read.csv2("Aula1/gapminderCountries.csv")
+
+# Mostrando um pedaço do dataset
+head(gapminderCountries)
+```
+
+Para maiores informações, leia a documentação das funções `read.csv` e `read.csv2`.
+
+## Arquivos Excel (.xls e .xlsx)
+
+O Microsoft Excel é um dos *softwares* de planilha mais populares do mundo. São muito utilizados não só no meio corporativo, mas também no meio acadêmico. Apesar de limitações principalmente relacionadas a lidar com datas e tabelas muito grandes, é uma ferramenta poderosa e torna-se ainda melhor se aliada ao R. 
+
+O `tidyverse` não carrega automaticamente o pacote necessário para ler arquivos Excel, portanto, precisaremos carregar o `readxl`. Utilizaremos como exemplo uma amostra do dataset `gapminder`, mas desta vez contendo informações para todos os países no ano de 2007. 
+
+```{r}
+# Carregando o pacote necessário
+library(readxl)
+
+# Importando o arquivo de interesse
+gapminder2007 <- read_excel("Aula1/gapminder2007.xlsx")
+
+# Mostrando um pedaço do dataset
+head(gapminder2007)
+```
+
+# Visualização
+
+A visualização pode ser utilizada tanto para conhecer os dados com que iremos trabalhar, quanto para comunicar com ao público aquilo que descobrimos. Para tanto, o `tidyverse` fornece o pacote `ggplot2`, uma ferramenta poderossíma! 
+
+Ele permite construir desde gráficos simples até visualizações extremamente elaboradas, onde diversas variáveis são mapeadas em diferentes atributos de um gráfico. Somado a outras ferramentas, o `ggplot2` também pode ser utilizado para a construção de mapas.
+
+## Gráfico de linha
+
+Gráficos de linhas são muito utilizados para mostrar tendências ao longo do tempo. Utilizando o dataset `gapminderCountries` que contruímos anteriormente, poderemos ver de que forma o PIB per capita de Brasil, Botsuana e Coreia do Sul se comportaram ao longo do tempo.
+
+```{r}
+gapminderCountries %>%
+  ggplot() +
+  geom_line(aes(x = year, 
+                y = gdpPercap/10^3, 
+                color = country)) +
+  labs(title = "Gapminder",
+       subtitle = "1957-2007",
+       color = "País") +
+  xlab("Ano") +
+  ylab("PIB per capita \n (US$ mil)")
+```
+
+## Gráfico de dispersão
+
+Gráficos de dispersão permitem visualizar a relação entre duas variáveis numéricas, o que nos permite visualizar possíveis correlações. Utilizaremos o dataset `gapminder2007` para ver de que forma o PIB per capita está relacionado à expectativa de vida nos diferentes países do mundo em 2007.
+
+Desta vez poderemos mostrar de que forma o `ggplot2` pode mapear diferentes atributos das observações em um mesmo gráfico. Em nosso exemplo, cada ponto representa um país, cada cor um continente, e o tamanho dos pontos é dado por sua população.
+
+```{r}
+gapminder2007 %>%
+  ggplot() +
+  geom_point(aes(x = gdpPercap/10^3, 
+                 y = lifeExp, 
+                 color = continent, 
+                 size = pop/10^6)) +
+  labs(title = "Gapminder",
+       subtitle = "2007",
+       color = "Continente",
+       size = "População \n (milhões de habitantes)") +
+  xlab("PIB per capita \n (US$ mil)") +
+  ylab("Expectativa de Vida \n (anos)")
+```
+
+# Organização e Transformação
+
+# Modelagem
+
+# Próximos Passos
