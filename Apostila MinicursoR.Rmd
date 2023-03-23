@@ -22,6 +22,8 @@ library(tidyverse)
 library(gapminder)
 library(formatR)
 
+set.seed(42)
+
 # Carregando arquivos necessários
 gapminderCountries <- gapminder %>%
   filter(country %in% c("Brazil", "Botswana", "Korea, Rep."))
@@ -29,10 +31,6 @@ gapminderCountries <- gapminder %>%
 gapminder2007 <- gapminder %>%
   filter(year == 2007)
 ```
-
-
-# Introdução
-
 
 # Conceitos Fundamentais
 
@@ -139,7 +137,66 @@ knitr::kable(conectivoOU)
 (5 == 6) | (12 < 8)
 ```
 
-## Variáveis e Tipos de Dados
+## Objetos, Tipos de Dados e Variáveis
+
+Em R praticamente tudo é um objeto: um número, uma palavra, um vetor contendo diversos números, uma tabela contendo diferentes vetores, uma lista contendo várias tabelas...as coisas podem ficar tão complicadas quanto se queira. 
+
+### Vetores
+
+Vetores são objetos formados por dados de um mesmo tipo. Um vetor pode conter nenhum, um ou mais valores. Alguns dos principais tipos de dados são:
+
+* `logical`: `TRUE` ou `FALSE`
+* `integer`: números inteiros
+* `numeric` ou `double`: números reais
+* `character`: texto
+
+```{r}
+# Para atribuir um valor a uma variável utilizados "<-" ou então "=".
+# Não confundiro o = de atribuição com o == operador lógico.
+# Vetores podem ser criados, ou concatenados como veremos mais adiante,
+# utilizando a função c().
+
+# Criando a variável vetor_vazio e deixando ela vazia
+vetor_vazio <- c()
+# Imprimindo a variável vetor_vazio
+vetor_vazio
+
+# Podemos atribuir apenas um valor a uma variável
+var_texto <- "Palavra"
+var_texto
+
+# Podemos atribuir qualquer valor a uma variável
+var_numerica <- 3*(5 + 2)
+var_numerica
+
+# Criando um vetores com três valores
+var_texto <- c("Palavra","Word","Mot")
+var_texto
+
+# Criando um vetor lógico
+var_logico = c(3 + 4 < 5, 2 == 1 + 1)
+var_logico
+```
+
+### Data frames
+
+Podemos agrupar vetores em um data frame. Em R, data frames são tabelas bidimensionais, semelhantes às planilhas do Excel. Este tipo de objeto será o mais utilizado em nosso dia-a-dia. 
+
+Vamos construir um data frame dos estados da região sudeste do Brasil, com as informações de nome, sigla, nome da capital, código DDD da capital e se a capital possui acesso para o mar.
+
+```{r}
+# Criando um data frame:
+estados_sudeste <- data.frame(
+  estado = c("Rio de Janeiro", "Sao Paulo", "Minas Gerais","Espirito Santo"),
+  sigla = c("RJ", "SP", "MG", "ES"),
+  capital = c("Rio de Janeiro", "Sao Paulo", "Belo Horizonte", "Vitoria"),
+  DDD_capital = c(21, 11, 31, 27),
+  mar_na_capital = c(TRUE, FALSE, FALSE, TRUE)
+)
+
+estados_sudeste
+```
+Esse procedimento funciona para data frames pequenos, mas não é difícil notar que se torna uma tarefa trabalhosa conforme aumenta-se o número de observações e variáveis. Felizmente, o R permite importar dados de outras fontes, o que aprenderemos a fazer em breve.
 
 ## Funções
 
@@ -149,58 +206,138 @@ Funções quase sempre recebem argumentos, de forma a ajustar seu comportamento 
 
 Caso queira obter mais informações sobre uma função, você pode acessar sua documentação. A documentação contém tudo, ou a maior parte, do que se precisa saber sore uma função: quais seus argumentos, como eles se comportam, quais os valores pré-definidos. Para acessar a documentação basta digitar um ponto de interrogação seguido do nome da função.
 
-### Aplicando funções em vetores numéricos
+Para aprendermos a usar algumas funções essenciais, usaremos o dataset `USArrests`, que contém dados sobre criminalidade nos 50 estados dos EUA no ano de 1973, e já vem pré-carregado no R. Assim, não precisaremos importar nada.
+
+### Explorando os dados
+
 ```{r}
-# Criar um vetor, ou concatenar vetores: c()
-alturas <- c(1.54, 1.92, 1.67, 1.72, 1.78)
-alturas
+# Vendo a estrutura dos dados:
+str(USArrests)
 
-# Mínimo: min()
-min(alturas)
+# Vendo um resumo dos dados:
+summary(USArrests)
 
-# Máximo: max()
-max(alturas)
+# Vendo as primeiras observações:
+head(USArrests)
 
-# Somatório: sum()
-sum(alturas)
+# Vendo as últimas observações:
+tail(USArrests)
 
-# Tamanho de um vetor: length()
-length(alturas)
+# Número de linhas:
+nrow(USArrests)
 
-# Ordenar um vetor em ordem crescente: sort()
-sort(alturas)
+# Número de colunas:
+ncol(USArrests)
+```
+
+Como vimos anteriormente, um `data frame` é uma representação tabular, onde cada linha corresponde a uma observação e cada coluna uma variável, ou atributo. Para obtermos uma coluna específica de um `data frame`, podemos utilizar o símbolo `$`.
+
+```{r}
+# Selecionando apenas a coluna Murder:
+USArrests$Murder
+
+# Classe de um objeto:
+class(USArrests$Murder)
+
+# Mínimo:
+min(USArrests$Murder)
+
+# Máximo:
+max(USArrests$Murder)
+
+# Somatório:
+sum(USArrests$Murder)
+
+# Comprimento de um vetor:
+length(USArrests$Murder)
+
+# Ordenar um vetor em ordem crescente:
+sort(USArrests$Murder)
 
 # A função sort possui o argumento opcional decreasing = FALSE. 
 # Para ordenar a lista de forma decrescente, podemos alterá-lo.
-sort(alturas, decreasing = TRUE)
+sort(USArrests$Murder, decreasing = TRUE)
+```
+
+### Estatísticas Descritivas
+
+Vamos usar agora outras colunas para calcularmos estatísticas descritivas utilizando funções do R.
+
+```{r}
+# Média:
+mean(USArrests$Assault)
+
+# Mediana:
+median(USArrests$Assault)
+
+# Quantis:
+quantile(USArrests$Assault)
+
+# Variância:
+var(USArrests$Assault)
+
+# Desvio padrão:
+sd(USArrests$Assault)
+
+# Covariância: 
+cov(USArrests$Assault, USArrests$Murder)
+
+# Correlação:
+cor(USArrests$Assault, USArrests$Murder)
+```
+
+Ao resultado de uma função pode ser aplicada outra função, o que é chamado de aninhamento. Vamos supor, por exemplo que queiremos arredondar, com três casas decimais, o valor calculado para a correlação entre as variáveis `Assault` e `Murder`.
+
+```{r}
+# A função utilizada para arredondar um número é round().
+# Para que tenha 2 casa decimais, precisaremos ajustar o parâmetro digits.
+round(cor(USArrests$Assault, USArrests$Murder), digits = 3)
+```
+
+### Criação de vetores
+
+Vamos conhecer algumas funções que podem ser usadas para criar vetores numéricos de forma fácil. 
+
+```{r}
+# Criar um vetor de com o valor x repetido n vezes:
+rep(2, 3)
 
 # Criar uma sequencia de números: seq()
 seq(from = 1, to = 50, by = 3)
 
 # Podemos substituir, por exemplo seq(from = x, to = y, by = 1)
 3:15
+
+# Vamos atribuir os valores anteriormente encontrados a variáveis:
+var1 <- rep(2, 3)
+var2 <- seq(from = 1, to = 50, by = 3)
+
+# Para concatenar vetores, utilizamos a função c()
+meu_vetor <- c(var1, var2)
+meu_vetor
 ```
 
-### Estatísticas Descritivas
+### Amostragem
+
+O R foi uma linguagem criada por estatísticos e até hoje possui como um de seus pontos fortes sua capacidade de lidar com amostragem e simulações. 
 
 ```{r}
-# Média: mean()
-mean(alturas)
+# Permutação aleatórias dos números naturais menores que 7:
+sample(7)
 
-# Variância: var()
-var(alturas)
+# Permutação aleatória dos números entre 2 e 5:
+sample(2:5)
 
-# Desvio padrão: sd()
-sd(alturas)
+# Sorteio, sem reposição, de 5 números aleatórios 
+# da variável var2 que criamos anteriormente:
+sample(var2, 5)
 
-# Mediana: median()
-median(alturas)
+# Sorteio, com reposição, de 6 números aleatórios entre 1 e 4:
+sample(1:4, size = 6, replace = TRUE)
 
-# Covariância: cov()
-
+# Sorteio, sem reposição, de uma palavra em uma lista:
+sample(c("pera", "uva", "banana", "caqui"), 1)
 ```
-
-
 
 ## Baixando e excutando pacotes externos
 
@@ -304,9 +441,3 @@ gapminder2007 %>%
   xlab("PIB per capita \n (US$ mil)") +
   ylab("Expectativa de Vida \n (anos)")
 ```
-
-# Organização e Transformação
-
-# Modelagem
-
-# Próximos Passos
