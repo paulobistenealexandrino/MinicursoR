@@ -178,6 +178,18 @@ var_logico = c(3 + 4 < 5, 2 == 1 + 1)
 var_logico
 ```
 
+Para apagar uma variável, utilizamos a função rm(). Aprenderemos sobre funções mais adiante. A princípio basta saber que dentro da função rm() colocaremos o nome das varíaveis que queremos apagar.
+
+```{r}
+# Apagando as variáveis var_logico, var_numerica e var_texto 
+# criadas anteriormente
+rm(var_logico, var_numerica, var_texto)
+
+# Para apagar todas as variáveis
+# Use com cuidado!
+rm(list = ls())
+```
+
 ### Data frames
 
 Podemos agrupar vetores em um data frame. Em R, data frames são tabelas bidimensionais, semelhantes às planilhas do Excel. Este tipo de objeto será o mais utilizado em nosso dia-a-dia. 
@@ -339,6 +351,14 @@ sample(1:4, size = 6, replace = TRUE)
 sample(c("pera", "uva", "banana", "caqui"), 1)
 ```
 
+Para replicar um experimento utilizando funções que produzem resultados aleatórios, precisamos definir uma "semente". Ela faz com que o computador gere sempre os mesmos números. Para tanto utilizamos a função set.seed(n), onde n é um número inteiro qualquer (um dado número sempre gerará o mesmo resultado). Preferencialmente deve estar no começo do seu script, sempre antes de rodar as funções.
+
+```{r}
+# Definindo 42 como a semente, poderia ser qualquer
+# outro número.
+set.seed(42)
+```
+
 ## Baixando e excutando pacotes externos
 
 Até agora utilizamos apenas funções pré-instaladas no R. Para ter acesso a novos pacotes, será necessário instalá-los primeiro. Esse procedimento só é necessário ser feito uma vez, a não ser que o R precise ser reinstalado. Sempre que iniciar uma sessão será necessário carregar os pacotes que serão utilizados.
@@ -441,3 +461,146 @@ gapminder2007 %>%
   xlab("PIB per capita \n (US$ mil)") +
   ylab("Expectativa de Vida \n (anos)")
 ```
+
+# Organização e Transformação
+
+# Modelagem
+
+Após organizar nossos dados e obter as informações iniciais com as estatísticas descritivas, podemos dar mais um passo em nossa análise e buscar entender como as diferentes variáveis que temos a disposição se relacionam. 
+
+Para tanto, em economia e outras ciências socias, partimos de modelos teóricos para a estimação de relações empíricas entre variáveis dependentes (variável resposta) e independentes (variáveis explicativas), através de técnicas de regressão.
+
+O R possui ferramentas para estimar diferentes tipos de modelo. A seguir veremos como funções que nos permitem estimar modelos lineares simples e múltiplos, probit e logit.
+
+## Regressão Linear
+
+A regressão linear assume que a relação entre a variável dependente e as variáveis independentes é uma função linear dos parâmetros.
+
+### Regressão Linear Simples
+
+Em uma regressão linear simples, a variável dependente é função de apenas uma variável independente mais um termo de erro. Ou seja, o modelo de regressão linear simples pode ser representado como:
+
+$$y = \beta_{0} + \beta_{1}x + u$$
+
+Onde $y$ é a variável dependente, $x$ a variável independente, $\beta_{0}$ e $\beta_{1}$ são os parâmetros e $u$ é o termo de erro. Para estimar os parâmetros de um modelo de regressão linear, comumente utiliza-se o método dos mínimos quadrados ordinários. Em R, utilizaremos a função `lm` para estimar modelos lineares.
+
+Para os exemplos, utilizaremos o pacote `wooldrige` que fornece os dataset usados como exemplo no livro "Introductory Econometrics: A Modern Approach, 7ed" do economista Profº Jeffrey Wooldridge.
+
+```{r, warning=FALSE}
+# Carregando o pacote wooldrige
+library(wooldridge)
+```
+
+```{r}
+# Carregando o dataset wage1
+wage1 <- wooldridge::wage1
+
+# Vendo a estrutura do dataset
+str(wage1)
+
+# Utilizando a função lm
+my_model <- lm(formula = wage ~ educ, data = wage1)
+
+# Mostrando os resultados do modelo
+summary(my_model)
+```
+
+Utilizamos o dataset `wage1` para estimar o modelo ecométrico
+
+$$ wage = \beta_{0} + \beta{1}educ + u$$ 
+
+Onde $wage$ é medido em dólares por hora e $educ$ são os anos de educação dos indivíduos da amostra. $\beta_{1}$ mede o efeito médio de um ano a mais de estudo no salário, tudo o mais constante. Podemos visualizar graficamente a relação.
+
+```{r, message=FALSE}
+wage1 %>%
+  ggplot(aes(x = educ, y = wage)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  theme_classic()
+```
+
+A variável `my_model` contém as informações do nosso modelo. Podemos acessar informações de interesse como o valor do $R^{2}$, os parâmetros e os resídios por meio dos atributos de `my_model`.
+
+```{r}
+# Coeficientes
+my_model$coefficients
+
+# Informações sobre os coeficientes
+summary(my_model)$coefficients
+
+# R^2
+summary(my_model)$r.squared
+
+# R^2 ajustado
+summary(my_model)$adj.r.squared
+
+# Estatísticas descritivas dos resíduos
+summary(my_model$residuals)
+```
+
+### Regressão Linear Múltipla
+
+Em um modelo de regressão linear multiplo, a variável dependente é função de múltiplas variáveis independentes. Ou seja,
+
+$$ y = \beta_{0} + \beta_{1}x_{1} + \beta_{2}x_{2} + \cdots + \beta_{n}x_{n} + u$$ 
+Novamente utilizaremos o dataset `wage1`. Desta vez, para estimar o modelo
+
+$$ wage = \beta_{0} + \beta_{1}educ + \beta_{2}exper + u$$
+```{r}
+# Criando um novo modelo
+my_model2 <- lm(wage ~ educ + exper, data = wage1)
+
+# Mostrando resultados da regressão
+summary(my_model2)
+```
+
+Podemos realizar utilizar a notação da fórmula de forma a alterar a especificação do modelo, por exemplo, incluir um termo quadrático, ou estimar um modelo sem intercepto.
+
+```{r}
+# Estimando o modelo anterior sem intercepto
+lm(wage ~ educ + exper - 1, data = wage1)
+```
+
+Vamos utilizar esses dados para estimar uma equação minceriana do tipo
+
+$$ \ln wage = \beta_{0} + \beta_{1}educ + \beta_{2}exper + \beta_{2}exper^2 + \gamma'x + u$$
+
+Onde $wage$, é o salário em dólares por hora, $educ$ são os anos de estudo, $exper$ os anos de experiência profissional e $x$ um vetor de características observáveis, como raça, gênero e status marital. Podemos estimar os parâmetros utilizando R da seguinte forma.
+
+```{r}
+# Equação Minceriana
+wage1 %>%
+  lm(log(wage) ~ educ + exper + I(exper^2) + nonwhite + female + married, data = .) %>%
+  summary()
+```
+
+## Logit
+
+Usaremos o dataset `cps91` do pacote `wooldrige` para exemplificar o uso da função `glm` que permite estimar modelos logit e probit. O exemplo consiste de um modelo para explicar a participação das mulheres casadas na força de trabalho.
+
+```{r}
+# Lendo o dataset
+cps91 <- wooldridge::cps91
+
+# Estimando modelo Logit
+cps91 %>%
+  glm(inlf ~ nwifeinc + educ + exper + I(exper^2) +
+        age + kidlt6 + kidge6,
+      family = binomial(link = "logit"),
+      data = .) %>%
+  summary()
+```
+
+## Probit
+
+```{r}
+# Estimando modelo Probit
+cps91 %>%
+  glm(inlf ~ nwifeinc + educ + exper + I(exper^2) +
+        age + kidlt6 + kidge6,
+      family = binomial(link = "probit"),
+      data = .) %>%
+  summary()
+```
+
+# Dicas para Continuar os Estudos

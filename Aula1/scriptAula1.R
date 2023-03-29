@@ -76,6 +76,7 @@
 
 # Criando a variável vetor_vazio e deixando ela vazia
 vetor_vazio <- c()
+
 # Imprimindo a variável vetor_vazio
 vetor_vazio
 
@@ -94,6 +95,7 @@ var_texto
 # Criando um vetor lógico
 var_logico = c(3 + 4 < 5, 2 == 1 + 1)
 var_logico
+
 
 # Criando um data frame:
 estados_sudeste <- data.frame(
@@ -225,6 +227,9 @@ sample(1:4, size = 6, replace = TRUE)
 sample(c("pera", "uva", "banana", "caqui"), 1)
 
 
+
+sample(c("pera", "uva", "banana", "caqui"), 1)
+
 # Baixando e importanto pacotes externos
 
 
@@ -272,7 +277,7 @@ gapminderCountries %>%
                 y = gdpPercap/10^3, 
                 color = country)) +
   labs(title = "Gapminder",
-       subtitle = "1957-2007",
+       subtitle = "1952-2007",
        color = "País") +
   xlab("Ano") +
   ylab("PIB per capita \n (US$ mil)")
