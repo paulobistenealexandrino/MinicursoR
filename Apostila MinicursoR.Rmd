@@ -460,9 +460,166 @@ gapminder2007 %>%
        size = "População \n (milhões de habitantes)") +
   xlab("PIB per capita \n (US$ mil)") +
   ylab("Expectativa de Vida \n (anos)")
+
+# Salvando o gráfico
+# Função ggsave salva o último gráfico mostrado
+ggsave(filename = "gapminder2007.png",
+       path = "Aula1/")
 ```
 
 # Organização e Transformação
+
+A maior parte do tempo gasto ao trabalhar com dados deve-se a atividades de limpeza, oganização e transformação. Muitas vezes, os dados que obtemos estão desorganizados ou ainda não apresentam o formato que desejamos.
+
+Além disso, é comum querermos versos sintéticas dos dados seja para construir tabelas ou gráficos que estejam em formatos apropriados para publicação.
+
+O `tidyverse` oferece uma série de ferramentas que facilitam a atividade de limpeza de dados. O operador pipe `%>%` e conjunto dos chamados *verbs*, funções que permitem construir encadeamentos de operações para organização de dados. 
+
+Os principais *verbs* que veremos serão: `mutate`, `select`, `filter`, `summarise`, `arrange` e `group_by`. Vamos retornar ao dataset `gapminder` para experimentarmos com essas funções e algumas outras que já utilizamos.
+
+```{r}
+library(gapminder)
+
+# Vendo de que forma o dataset está organizado
+head(gapminder)
+```
+
+## `mutate`: Criando nova coluna
+
+Sabemos que o PIB per capita é a razão entre o PIB e a população. Caso desejemos recuperar o PIB a partir das informações que temos, podemos utilizara função `mutate`.
+
+```{r}
+gapminder %>%
+  mutate(gdp = pop*gdpPercap) %>%
+  head()
+```
+
+## `select`: Selecionando colunas
+
+A função `select` permite especificar quais colunas queremos manter em nosso data frame. Essa função é muito útil quando trabalhamos com bases de dados muito grandes onde algumas colunas não são de nosso interesse ou são redundantes.
+
+Se quisermos construir um data frame apenas com as colunas `country`, `year`, `lifeExp`e `pop`:
+
+```{r}
+gapminder %>%
+  select(country, year, lifeExp, pop) %>%
+  head()
+```
+
+Para selecionarmos colunas adjacentes podemos usar dois pontos.
+
+```{r}
+gapminder %>%
+  select(country:lifeExp) %>%
+  head()
+```
+
+Podemos dizer, também, quais colunas não queremos.
+
+```{r}
+gapminder %>%
+  select(-continent) %>%
+  head()
+```
+
+Dependendo do conjunto de coluna que desejamos, podemos combinar o que foi visto anteriormente.
+
+```{r}
+gapminder %>%
+  select(country:lifeExp,-continent,gdpPercap) %>%
+  head()
+```
+
+## `filter`: Aplicando filtros
+
+Filtros permitem selecionar apenas linhas que atendam a um critério pré-estabelecido. Aqui os operadores lógicos que vimos no início da apostila serão essenciais.
+
+Por exemplo, se quisermos selecionar apenas as observações relativas ao Brasil:
+
+```{r}
+gapminder %>%
+  filter(country == "Brazil") %>%
+  head()
+```
+Se quisermos filtrar por mais de um país, utilizamos o operador `%in%`.
+
+```{r}
+gapminder %>%
+  filter(country %in% c("Brazil", "Argentina"))
+```
+
+Podemos também combinar filtros.
+
+```{r}
+gapminder %>%
+  filter(country %in% c("Brazil", "Argentina"),
+         year < 1977)
+```
+Note que poderíamos ter utilizado o operador `&` no lugar da vírgula. Agora, vamos utilizar o operador `|`.
+
+```{r}
+gapminder %>%
+  filter(year == 2007,
+         continent == "Oceania" | country == "United States")
+```
+
+## `group_by` e `summarise`: Sintetizando colunas
+
+Se quisermos saber o PIB per capita médio para cada um dos continentes em 1972:
+
+```{r}
+gapminder %>%
+  filter(year == 1972) %>%
+  group_by(continent) %>%
+  summarise(avg_gdpPercap = mean(gdpPercap))
+```
+
+## `arrange`: Ordenando as linhas de forma crescente ou decrescente
+
+Quais os 5 países com menor expectativa de vida em 1987?
+
+```{r}
+gapminder %>%
+  filter(year == 1987) %>%
+  arrange(lifeExp) %>%
+  head(n = 5)
+```
+
+E os 5 países com maior expectativa?
+
+```{r}
+gapminder %>%
+  filter(year == 1987) %>%
+  arrange(desc(lifeExp)) %>%
+  head(n = 5)
+```
+
+## Salvando seus resultados
+
+Quando terminar de organizar seus dados, pode ser interessante salvá-lo para utilizar posteriormente ou compartilhar com alguém. Vamos reconstruir os datasets `gapminderCountries` e `gapminder2007` que utilizamos anteriormente e salvá-los em .csve .xlsx respectivamente.
+
+### Salvando arquivos separados por vírgula (.csv)
+
+```{r}
+gapminderCountries <- gapminder %>%
+  filter(country %in% c("Brazil", "Botswana", "Korea, Rep."))
+
+# Salvando em padrão americano
+write.csv(gapminderCountries, file = "Aula2/gapminderCountries.csv")
+```
+
+### Salvando arquivos Excel (.xlsx)
+
+```{r}
+gapminder2007 <- gapminder %>%
+  filter(year == 2007)
+
+# Precisaremos usar o pacote writexl
+library(writexl)
+
+# Salvando
+write_xlsx(gapminder2007, "Aula2/gapminder2007.xlsx")
+```
 
 # Modelagem
 
