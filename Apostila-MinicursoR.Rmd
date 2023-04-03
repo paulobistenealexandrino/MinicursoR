@@ -1,0 +1,854 @@
+---
+title: "Introdução ao R para Análise de Dados"
+author: "Paulo Alexandrino"
+date: "Março 2023"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+    number_sections: yes
+    latex_engine: xelatex
+header-includes: \usepackage[brazil]{babel}
+subtitle: Minicurso
+documentclass: report
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Carregando pacotes necessários
+library(tidyverse)
+library(gapminder)
+library(formatR)
+
+set.seed(42)
+
+# Carregando arquivos necessários
+gapminderCountries <- gapminder %>%
+  filter(country %in% c("Brazil", "Botswana", "Korea, Rep."))
+
+gapminder2007 <- gapminder %>%
+  filter(year == 2007)
+
+# Lendo shapefiles
+municipios <- read_rds("municipios.RDS")
+estados <- read_rds("estados.RDS")
+```
+
+# Conceitos Fundamentais
+
+## Operadores
+
+### Operadores matemáticos
+
+A forma mais elementar de utilizar o R é como uma calculadora que nos permite realizar todo tipo de operação matemática desejada.
+
+```{r}
+# Soma (+)
+5 + 7
+
+# Subtração (-)
+10 - 16
+
+# Multiplicação (*)
+2 * 7
+
+# Exponenciação (^)
+2^4
+
+# Divisão (/)
+5 / 2
+
+# Divisão Inteira (%/%)
+5 %/% 2
+
+# Módulo - Resto da divisão inteira (%%)
+5 %% 2
+```
+
+### Operadores lógicos
+
+Operadores lógicos nos permitem estabelecer relações entre objetos e julgar proposições (orações declarativas) como verdadeiras (`TRUE`) ou falsas (`FALSE`). Serão muito úteis a construção de filtros.
+
+```{R}
+# Menor que (<)
+5 < 3
+
+# Menor ou igual que (<=)
+2.5 <= 7
+
+# Maior que (>)
+10 > 15
+
+# Maior ou igual que (>=)
+11 >= 11
+
+# Igual a (==)
+2 == 3
+
+# Diferente de (!=)
+5 != 4
+```
+
+A negação de uma proposição é seu inverso lógico.
+
+```{r}
+# Negação (!)
+2 > 5
+!(2 > 5)
+```
+
+Os conectivos de conjunção ($\wedge$, lê-se `E`) e disjunção ($\vee$, lê-se `OU`) são operadores lógicos que permitem criar proposições compostas. Sejam $p$ e $q$ proposições quaisquer:
+
+* A conjunção $p \wedge q$ é verdadeira se $p$ e $q$ são ambas verdadeiras; se ao menos uma delas for falsa, $p \wedge q$ é falsa.
+
+```{r, echo=FALSE}
+conectivoE <- data.frame(
+  p = c("V","V","F","F"),
+  q = c("V","F","V","F"),
+  pEq = c("V","F","F","F")
+)
+
+colnames(conectivoE) <- c("p","q","p ^ q")
+
+knitr::kable(conectivoE)
+```
+
+```{r}
+# E (&)
+(2 > 1) & (3 != 0)
+(3 < 2) & (5 < 11)
+```
+
+* A disjunção $p \vee q$ é verdadeira se $p$ e $q$ se ao menos uma das proposições $p$ ou $q$ é verdadeira; se $p$ e $q$ são ambas falsas, então $p \vee q$ é falsa.
+
+```{r, echo=FALSE}
+conectivoOU <- data.frame(
+  p = c("V","V","F","F"),
+  q = c("V","F","V","F"),
+  pOUq = c("V","V","V","F")
+)
+
+colnames(conectivoOU) <- c("p","q","p V q")
+
+knitr::kable(conectivoOU)
+```
+
+```{r}
+# OU (|)
+(3 < 2) | (5 < 11)
+(5 == 6) | (12 < 8)
+```
+
+## Objetos, Tipos de Dados e Variáveis
+
+Em R praticamente tudo é um objeto: um número, uma palavra, um vetor contendo diversos números, uma tabela contendo diferentes vetores, uma lista contendo várias tabelas...as coisas podem ficar tão complicadas quanto se queira. 
+
+### Vetores
+
+Vetores são objetos formados por dados de um mesmo tipo. Um vetor pode conter nenhum, um ou mais valores. Alguns dos principais tipos de dados são:
+
+* `logical`: `TRUE` ou `FALSE`
+* `integer`: números inteiros
+* `numeric` ou `double`: números reais
+* `character`: texto
+
+```{r}
+# Para atribuir um valor a uma variável utilizados "<-" ou então "=".
+# Não confundiro o = de atribuição com o == operador lógico.
+# Vetores podem ser criados, ou concatenados como veremos mais adiante,
+# utilizando a função c().
+
+# Criando a variável vetor_vazio e deixando ela vazia
+vetor_vazio <- c()
+# Imprimindo a variável vetor_vazio
+vetor_vazio
+
+# Podemos atribuir apenas um valor a uma variável
+var_texto <- "Palavra"
+var_texto
+
+# Podemos atribuir qualquer valor a uma variável
+var_numerica <- 3*(5 + 2)
+var_numerica
+
+# Criando um vetores com três valores
+var_texto <- c("Palavra","Word","Mot")
+var_texto
+
+# Criando um vetor lógico
+var_logico = c(3 + 4 < 5, 2 == 1 + 1)
+var_logico
+```
+
+Para apagar uma variável, utilizamos a função rm(). Aprenderemos sobre funções mais adiante. A princípio basta saber que dentro da função rm() colocaremos o nome das varíaveis que queremos apagar.
+
+```{r}
+# Apagando as variáveis var_logico, var_numerica e var_texto 
+# criadas anteriormente
+rm(var_logico, var_numerica, var_texto)
+
+# Para apagar todas as variáveis
+# Use com cuidado!
+rm(list = ls())
+```
+
+### Data frames
+
+Podemos agrupar vetores em um data frame. Em R, data frames são tabelas bidimensionais, semelhantes às planilhas do Excel. Este tipo de objeto será o mais utilizado em nosso dia-a-dia. 
+
+Vamos construir um data frame dos estados da região sudeste do Brasil, com as informações de nome, sigla, nome da capital, código DDD da capital e se a capital possui acesso para o mar.
+
+```{r}
+# Criando um data frame:
+estados_sudeste <- data.frame(
+  estado = c("Rio de Janeiro", "Sao Paulo", "Minas Gerais","Espirito Santo"),
+  sigla = c("RJ", "SP", "MG", "ES"),
+  capital = c("Rio de Janeiro", "Sao Paulo", "Belo Horizonte", "Vitoria"),
+  DDD_capital = c(21, 11, 31, 27),
+  mar_na_capital = c(TRUE, FALSE, FALSE, TRUE)
+)
+
+estados_sudeste
+```
+Esse procedimento funciona para data frames pequenos, mas não é difícil notar que se torna uma tarefa trabalhosa conforme aumenta-se o número de observações e variáveis. Felizmente, o R permite importar dados de outras fontes, o que aprenderemos a fazer em breve.
+
+## Funções
+
+Funções são ferramentas, porções de código reutilizáveis. Elas nos permitem realizar os mais variados tipos de operações, seja criar ou modificar objetos, realizar comandos no computador, e muito mais. 
+
+Funções quase sempre recebem argumentos, de forma a ajustar seu comportamento de acordo com algum objetivo específico. Alguns argumentos são obrigatórios, outros opicionais, ou seja, possuem valores pré-definidos.
+
+Caso queira obter mais informações sobre uma função, você pode acessar sua documentação. A documentação contém tudo, ou a maior parte, do que se precisa saber sore uma função: quais seus argumentos, como eles se comportam, quais os valores pré-definidos. Para acessar a documentação basta digitar um ponto de interrogação seguido do nome da função.
+
+Para aprendermos a usar algumas funções essenciais, usaremos o dataset `USArrests`, que contém dados sobre criminalidade nos 50 estados dos EUA no ano de 1973, e já vem pré-carregado no R. Assim, não precisaremos importar nada.
+
+### Explorando os dados
+
+```{r}
+# Vendo a estrutura dos dados:
+str(USArrests)
+
+# Vendo um resumo dos dados:
+summary(USArrests)
+
+# Vendo as primeiras observações:
+head(USArrests)
+
+# Vendo as últimas observações:
+tail(USArrests)
+
+# Número de linhas:
+nrow(USArrests)
+
+# Número de colunas:
+ncol(USArrests)
+```
+
+Como vimos anteriormente, um `data frame` é uma representação tabular, onde cada linha corresponde a uma observação e cada coluna uma variável, ou atributo. Para obtermos uma coluna específica de um `data frame`, podemos utilizar o símbolo `$`.
+
+```{r}
+# Selecionando apenas a coluna Murder:
+USArrests$Murder
+
+# Classe de um objeto:
+class(USArrests$Murder)
+
+# Mínimo:
+min(USArrests$Murder)
+
+# Máximo:
+max(USArrests$Murder)
+
+# Somatório:
+sum(USArrests$Murder)
+
+# Comprimento de um vetor:
+length(USArrests$Murder)
+
+# Ordenar um vetor em ordem crescente:
+sort(USArrests$Murder)
+
+# A função sort possui o argumento opcional decreasing = FALSE. 
+# Para ordenar a lista de forma decrescente, podemos alterá-lo.
+sort(USArrests$Murder, decreasing = TRUE)
+```
+
+### Estatísticas Descritivas
+
+Vamos usar agora outras colunas para calcularmos estatísticas descritivas utilizando funções do R.
+
+```{r}
+# Média:
+mean(USArrests$Assault)
+
+# Mediana:
+median(USArrests$Assault)
+
+# Quantis:
+quantile(USArrests$Assault)
+
+# Variância:
+var(USArrests$Assault)
+
+# Desvio padrão:
+sd(USArrests$Assault)
+
+# Covariância: 
+cov(USArrests$Assault, USArrests$Murder)
+
+# Correlação:
+cor(USArrests$Assault, USArrests$Murder)
+```
+
+Ao resultado de uma função pode ser aplicada outra função, o que é chamado de aninhamento. Vamos supor, por exemplo que queiremos arredondar, com três casas decimais, o valor calculado para a correlação entre as variáveis `Assault` e `Murder`.
+
+```{r}
+# A função utilizada para arredondar um número é round().
+# Para que tenha 2 casa decimais, precisaremos ajustar o parâmetro digits.
+round(cor(USArrests$Assault, USArrests$Murder), digits = 3)
+```
+
+### Criação de vetores
+
+Vamos conhecer algumas funções que podem ser usadas para criar vetores numéricos de forma fácil. 
+
+```{r}
+# Criar um vetor de com o valor x repetido n vezes:
+rep(2, 3)
+
+# Criar uma sequencia de números: seq()
+seq(from = 1, to = 50, by = 3)
+
+# Podemos substituir, por exemplo seq(from = x, to = y, by = 1)
+3:15
+
+# Vamos atribuir os valores anteriormente encontrados a variáveis:
+var1 <- rep(2, 3)
+var2 <- seq(from = 1, to = 50, by = 3)
+
+# Para concatenar vetores, utilizamos a função c()
+meu_vetor <- c(var1, var2)
+meu_vetor
+```
+
+### Amostragem
+
+O R foi uma linguagem criada por estatísticos e até hoje possui como um de seus pontos fortes sua capacidade de lidar com amostragem e simulações. 
+
+```{r}
+# Permutação aleatórias dos números naturais menores que 7:
+sample(7)
+
+# Permutação aleatória dos números entre 2 e 5:
+sample(2:5)
+
+# Sorteio, sem reposição, de 5 números aleatórios 
+# da variável var2 que criamos anteriormente:
+sample(var2, 5)
+
+# Sorteio, com reposição, de 6 números aleatórios entre 1 e 4:
+sample(1:4, size = 6, replace = TRUE)
+
+# Sorteio, sem reposição, de uma palavra em uma lista:
+sample(c("pera", "uva", "banana", "caqui"), 1)
+```
+
+Para replicar um experimento utilizando funções que produzem resultados aleatórios, precisamos definir uma "semente". Ela faz com que o computador gere sempre os mesmos números. Para tanto utilizamos a função set.seed(n), onde n é um número inteiro qualquer (um dado número sempre gerará o mesmo resultado). Preferencialmente deve estar no começo do seu script, sempre antes de rodar as funções.
+
+```{r}
+# Definindo 42 como a semente, poderia ser qualquer
+# outro número.
+set.seed(42)
+```
+
+## Baixando e excutando pacotes externos
+
+Até agora utilizamos apenas funções pré-instaladas no R. Para ter acesso a novos pacotes, será necessário instalá-los primeiro. Esse procedimento só é necessário ser feito uma vez, a não ser que o R precise ser reinstalado. Sempre que iniciar uma sessão será necessário carregar os pacotes que serão utilizados.
+
+```{r, eval=FALSE}
+# Instalando o tidyverse
+install.packages("tidyverse")
+
+# Carregando o tidyverse
+library("tidyverse")
+```
+
+O `tidyverse` é um conjunto de pacotes que juntos fornecem uma ampla gama de ferramentas para análise de dados. Algumas dessas ferramentas apresentam versões otimizadas de funções já existentes no R.
+
+O operador pipe (`%>%`) permite substituir o aninhamento de funções por uma cadeia de operação, o que torna os códigos mais legíveis. Veremos aplicações do pipe e de algumas dos principais pacotes e funções do `tidyverse` nos capítulos posteriores.
+
+
+# Importação
+
+O R nos permite importar e utilizar em nossas análises uma série de diferentes tipos de arquivos. Isso pode ser feito por meio de funções nativas ou através de ferramentas disponíveis em pacotes criados por outros usuários. Por exemplo, o `tidyverse` possui os pacotes `readr`, que permite a leitura de arquivos como .csv, .fwf e .txt, e o pacote `readxl`, para leitura de arquivos Excel. 
+
+## Arquivos separados por vírgula (.csv)
+
+*Comma-separated values* é um formato de arquivo de texto onde as observações de uma tabela são representadas por linhas e as colunas são separadas por vírgula (no padrão americano) ou ponto-e-vírgula (no padrão europeu e brasileiro). No padrão separado por vírgula, o indicador decimal é o ponto; no padrãos separado por ponto-e-vírgula, a vírcula. É importante estar atento ao tipo de arquivo que estamos lidando.
+
+O dataset `gapminder` contém dados econômicos e demográficos para diversos países a cada 5 anos de 1952 a 2007. O arquivo que usaremos como exemplo apresenta uma amostra contendo as informações disponíveis para o Brasil, Botsuana e Coréia do Sul. Ele foi salvo em .csv com padrão separado por ponto-e-vírgula.
+
+```{r}
+# Primeira forma: ajustando os parâmetros da função read.csv
+gapminderCountries <- read.csv("Aula1/gapminderCountries.csv",
+                               sep = ";",
+                               dec = ",")
+
+# Segunda forma: utilizando a função read.csv2
+gapminderCountries <- read.csv2("Aula1/gapminderCountries.csv")
+
+# Mostrando um pedaço do dataset
+head(gapminderCountries)
+```
+
+Para maiores informações, leia a documentação das funções `read.csv` e `read.csv2`.
+
+## Arquivos Excel (.xls e .xlsx)
+
+O Microsoft Excel é um dos *softwares* de planilha mais populares do mundo. São muito utilizados não só no meio corporativo, mas também no meio acadêmico. Apesar de limitações principalmente relacionadas a lidar com datas e tabelas muito grandes, é uma ferramenta poderosa e torna-se ainda melhor se aliada ao R. 
+
+O `tidyverse` não carrega automaticamente o pacote necessário para ler arquivos Excel, portanto, precisaremos carregar o `readxl`. Utilizaremos como exemplo uma amostra do dataset `gapminder`, mas desta vez contendo informações para todos os países no ano de 2007. 
+
+```{r}
+# Carregando o pacote necessário
+library(readxl)
+
+# Importando o arquivo de interesse
+gapminder2007 <- read_excel("Aula1/gapminder2007.xlsx")
+
+# Mostrando um pedaço do dataset
+head(gapminder2007)
+```
+
+# Visualização
+
+A visualização pode ser utilizada tanto para conhecer os dados com que iremos trabalhar, quanto para comunicar com ao público aquilo que descobrimos. Para tanto, o `tidyverse` fornece o pacote `ggplot2`, uma ferramenta poderossíma! 
+
+Ele permite construir desde gráficos simples até visualizações extremamente elaboradas, onde diversas variáveis são mapeadas em diferentes atributos de um gráfico. Somado a outras ferramentas, o `ggplot2` também pode ser utilizado para a construção de mapas.
+
+## Gráfico de linha
+
+Gráficos de linhas são muito utilizados para mostrar tendências ao longo do tempo. Utilizando o dataset `gapminderCountries` que contruímos anteriormente, poderemos ver de que forma o PIB per capita de Brasil, Botsuana e Coreia do Sul se comportaram ao longo do tempo.
+
+```{r}
+gapminderCountries %>%
+  ggplot() +
+  geom_line(aes(x = year, 
+                y = gdpPercap/10^3, 
+                color = country)) +
+  labs(title = "Gapminder",
+       subtitle = "1957-2007",
+       color = "País") +
+  xlab("Ano") +
+  ylab("PIB per capita \n (US$ mil)")
+```
+
+## Gráfico de dispersão
+
+Gráficos de dispersão permitem visualizar a relação entre duas variáveis numéricas, o que nos permite visualizar possíveis correlações. Utilizaremos o dataset `gapminder2007` para ver de que forma o PIB per capita está relacionado à expectativa de vida nos diferentes países do mundo em 2007.
+
+Desta vez poderemos mostrar de que forma o `ggplot2` pode mapear diferentes atributos das observações em um mesmo gráfico. Em nosso exemplo, cada ponto representa um país, cada cor um continente, e o tamanho dos pontos é dado por sua população.
+
+```{r}
+gapminder2007 %>%
+  ggplot() +
+  geom_point(aes(x = gdpPercap/10^3, 
+                 y = lifeExp, 
+                 color = continent, 
+                 size = pop/10^6)) +
+  labs(title = "Gapminder",
+       subtitle = "2007",
+       color = "Continente",
+       size = "População \n (milhões de habitantes)") +
+  xlab("PIB per capita \n (US$ mil)") +
+  ylab("Expectativa de Vida \n (anos)")
+
+# Salvando o gráfico
+# Função ggsave salva o último gráfico mostrado
+ggsave(filename = "gapminder2007.png",
+       path = "Aula1/")
+```
+## Mapas
+
+O `ggplot2` permite também construir mapas. Como motivação para estudos posteriores, mostraremos como construir um mapa dos municípios e estados brasileiros. O arquivo contendo os limites geográficos será obtigo através do pacote `geobr` desenvolvido pelo IBGE e que fornece informações geográficas sobre do Censo 2010.
+
+```{r, eval=FALSE}
+# Carregando o pacote
+library(geobr)
+
+# Baixando os limites dos municípios
+municipios <- read_municipality(code_muni = "all")
+
+# Baixando os limites dos estados
+estados <- read_state(code_state = "all")
+```
+
+Após baixar os dados necessários podemos construir o mapa.
+
+```{r, echo=FALSE}
+# Lendo shapefiles
+municipios <- read_rds("municipios.RDS")
+estados <- read_rds("estados.RDS")
+```
+
+```{r}
+# Gerando mapa
+ggplot() +
+  # Primeira camada contendo o limte dos municípios
+  geom_sf(data = municipios, color = "gray", alpha = 0.8) +
+  # Segunda camada contendo o limite dos estados
+  geom_sf(data = estados, fill = NA) +
+  labs(title = "Brasil",
+       subtitle = "Limites Estados e Municipios - 2010") +
+  theme_void()
+```
+
+# Organização e Transformação
+
+A maior parte do tempo gasto ao trabalhar com dados deve-se a atividades de limpeza, oganização e transformação. Muitas vezes, os dados que obtemos estão desorganizados ou ainda não apresentam o formato que desejamos.
+
+Além disso, é comum querermos versos sintéticas dos dados seja para construir tabelas ou gráficos que estejam em formatos apropriados para publicação.
+
+O `tidyverse` oferece uma série de ferramentas que facilitam a atividade de limpeza de dados. O operador pipe `%>%` e conjunto dos chamados *verbs*, funções que permitem construir encadeamentos de operações para organização de dados. 
+
+Os principais *verbs* que veremos serão: `mutate`, `select`, `filter`, `summarise`, `arrange` e `group_by`. Vamos retornar ao dataset `gapminder` para experimentarmos com essas funções e algumas outras que já utilizamos.
+
+```{r}
+library(gapminder)
+
+# Vendo de que forma o dataset está organizado
+head(gapminder)
+```
+
+## `mutate`: Criando nova coluna
+
+Sabemos que o PIB per capita é a razão entre o PIB e a população. Caso desejemos recuperar o PIB a partir das informações que temos, podemos utilizara função `mutate`.
+
+```{r}
+gapminder %>%
+  mutate(gdp = pop*gdpPercap) %>%
+  head()
+```
+
+## `select`: Selecionando colunas
+
+A função `select` permite especificar quais colunas queremos manter em nosso data frame. Essa função é muito útil quando trabalhamos com bases de dados muito grandes onde algumas colunas não são de nosso interesse ou são redundantes.
+
+Se quisermos construir um data frame apenas com as colunas `country`, `year`, `lifeExp`e `pop`:
+
+```{r}
+gapminder %>%
+  select(country, year, lifeExp, pop) %>%
+  head()
+```
+
+Para selecionarmos colunas adjacentes podemos usar dois pontos.
+
+```{r}
+gapminder %>%
+  select(country:lifeExp) %>%
+  head()
+```
+
+Podemos dizer, também, quais colunas não queremos.
+
+```{r}
+gapminder %>%
+  select(-continent) %>%
+  head()
+```
+
+Dependendo do conjunto de coluna que desejamos, podemos combinar o que foi visto anteriormente.
+
+```{r}
+gapminder %>%
+  select(country:lifeExp,-continent,gdpPercap) %>%
+  head()
+```
+
+## `filter`: Aplicando filtros
+
+Filtros permitem selecionar apenas linhas que atendam a um critério pré-estabelecido. Aqui os operadores lógicos que vimos no início da apostila serão essenciais.
+
+Por exemplo, se quisermos selecionar apenas as observações relativas ao Brasil:
+
+```{r}
+gapminder %>%
+  filter(country == "Brazil") %>%
+  head()
+```
+Se quisermos filtrar por mais de um país, utilizamos o operador `%in%`.
+
+```{r}
+gapminder %>%
+  filter(country %in% c("Brazil", "Argentina"))
+```
+
+Podemos também combinar filtros.
+
+```{r}
+gapminder %>%
+  filter(country %in% c("Brazil", "Argentina"),
+         year < 1977)
+```
+Note que poderíamos ter utilizado o operador `&` no lugar da vírgula. Agora, vamos utilizar o operador `|`.
+
+```{r}
+gapminder %>%
+  filter(year == 2007,
+         continent == "Oceania" | country == "United States")
+```
+
+## `group_by` e `summarise`: Sintetizando colunas
+
+Se quisermos saber o PIB per capita médio para cada um dos continentes em 1972:
+
+```{r}
+gapminder %>%
+  filter(year == 1972) %>%
+  group_by(continent) %>%
+  summarise(avg_gdpPercap = mean(gdpPercap))
+```
+
+## `arrange`: Ordenando as linhas de forma crescente ou decrescente
+
+Quais os 5 países com menor expectativa de vida em 1987?
+
+```{r}
+gapminder %>%
+  filter(year == 1987) %>%
+  arrange(lifeExp) %>%
+  head(n = 5)
+```
+
+E os 5 países com maior expectativa?
+
+```{r}
+gapminder %>%
+  filter(year == 1987) %>%
+  arrange(desc(lifeExp)) %>%
+  head(n = 5)
+```
+
+## Salvando seus resultados
+
+Quando terminar de organizar seus dados, pode ser interessante salvá-lo para utilizar posteriormente ou compartilhar com alguém. Vamos reconstruir os datasets `gapminderCountries` e `gapminder2007` que utilizamos anteriormente e salvá-los em .csve .xlsx respectivamente.
+
+### Salvando arquivos separados por vírgula (.csv)
+
+```{r}
+gapminderCountries <- gapminder %>%
+  filter(country %in% c("Brazil", "Botswana", "Korea, Rep."))
+
+# Salvando em padrão americano
+write.csv(gapminderCountries, file = "Aula2/gapminderCountries.csv")
+```
+
+### Salvando arquivos Excel (.xlsx)
+
+```{r}
+gapminder2007 <- gapminder %>%
+  filter(year == 2007)
+
+# Precisaremos usar o pacote writexl
+library(writexl)
+
+# Salvando
+write_xlsx(gapminder2007, "Aula2/gapminder2007.xlsx")
+```
+
+# Modelagem
+
+Após organizar nossos dados e obter as informações iniciais com as estatísticas descritivas, podemos dar mais um passo em nossa análise e buscar entender como as diferentes variáveis que temos a disposição se relacionam. 
+
+Para tanto, em economia e outras ciências socias, partimos de modelos teóricos para a estimação de relações empíricas entre variáveis dependentes (variável resposta) e independentes (variáveis explicativas), através de técnicas de regressão.
+
+O R possui ferramentas para estimar diferentes tipos de modelo. A seguir veremos como funções que nos permitem estimar modelos lineares simples e múltiplos, probit e logit.
+
+## Regressão Linear
+
+A regressão linear assume que a relação entre a variável dependente e as variáveis independentes é uma função linear dos parâmetros.
+
+### Regressão Linear Simples
+
+Em uma regressão linear simples, a variável dependente é função de apenas uma variável independente mais um termo de erro. Ou seja, o modelo de regressão linear simples pode ser representado como:
+
+$$y = \beta_{0} + \beta_{1}x + u$$
+
+Onde $y$ é a variável dependente, $x$ a variável independente, $\beta_{0}$ e $\beta_{1}$ são os parâmetros e $u$ é o termo de erro. Para estimar os parâmetros de um modelo de regressão linear, comumente utiliza-se o método dos mínimos quadrados ordinários. Em R, utilizaremos a função `lm` para estimar modelos lineares.
+
+Para os exemplos, utilizaremos o pacote `wooldrige` que fornece os dataset usados como exemplo no livro "Introductory Econometrics: A Modern Approach, 7ed" do economista Profº Jeffrey Wooldridge.
+
+```{r, warning=FALSE}
+# Carregando o pacote wooldrige
+library(wooldridge)
+```
+
+```{r}
+# Carregando o dataset wage1
+wage1 <- wooldridge::wage1
+
+# Vendo a estrutura do dataset
+str(wage1)
+
+# Utilizando a função lm
+my_model <- lm(formula = wage ~ educ, data = wage1)
+
+# Mostrando os resultados do modelo
+summary(my_model)
+```
+
+Utilizamos o dataset `wage1` para estimar o modelo ecométrico
+
+$$ wage = \beta_{0} + \beta{1}educ + u$$ 
+
+Onde $wage$ é medido em dólares por hora e $educ$ são os anos de educação dos indivíduos da amostra. $\beta_{1}$ mede o efeito médio de um ano a mais de estudo no salário, tudo o mais constante. Podemos visualizar graficamente a relação.
+
+```{r, message=FALSE}
+wage1 %>%
+  ggplot(aes(x = educ, y = wage)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  theme_classic()
+```
+
+A variável `my_model` contém as informações do nosso modelo. Podemos acessar informações de interesse como o valor do $R^{2}$, os parâmetros e os resídios por meio dos atributos de `my_model`.
+
+```{r}
+# Coeficientes
+my_model$coefficients
+
+# Informações sobre os coeficientes
+summary(my_model)$coefficients
+
+# R^2
+summary(my_model)$r.squared
+
+# R^2 ajustado
+summary(my_model)$adj.r.squared
+
+# Estatísticas descritivas dos resíduos
+summary(my_model$residuals)
+```
+
+### Regressão Linear Múltipla
+
+Em um modelo de regressão linear multiplo, a variável dependente é função de múltiplas variáveis independentes. Ou seja,
+
+$$ y = \beta_{0} + \beta_{1}x_{1} + \beta_{2}x_{2} + \cdots + \beta_{n}x_{n} + u$$ 
+Novamente utilizaremos o dataset `wage1`. Desta vez, para estimar o modelo
+
+$$ wage = \beta_{0} + \beta_{1}educ + \beta_{2}exper + u$$
+```{r}
+# Criando um novo modelo
+my_model2 <- lm(wage ~ educ + exper, data = wage1)
+
+# Mostrando resultados da regressão
+summary(my_model2)
+```
+
+Podemos realizar utilizar a notação da fórmula de forma a alterar a especificação do modelo, por exemplo, incluir um termo quadrático, ou estimar um modelo sem intercepto.
+
+```{r}
+# Estimando o modelo anterior sem intercepto
+lm(wage ~ educ + exper - 1, data = wage1)
+```
+
+Vamos utilizar esses dados para estimar uma equação minceriana do tipo
+
+$$ \ln wage = \beta_{0} + \beta_{1}educ + \beta_{2}exper + \beta_{2}exper^2 + \gamma'x + u$$
+
+Onde $wage$, é o salário em dólares por hora, $educ$ são os anos de estudo, $exper$ os anos de experiência profissional e $x$ um vetor de características observáveis, como raça, gênero e status marital. Podemos estimar os parâmetros utilizando R da seguinte forma.
+
+```{r}
+# Equação Minceriana
+wage1 %>%
+  lm(log(wage) ~ educ + exper + I(exper^2) + nonwhite + female + married, data = .) %>%
+  summary()
+```
+
+## Logit
+
+Usaremos o dataset `cps91` do pacote `wooldrige` para exemplificar o uso da função `glm` que permite estimar modelos logit e probit. O exemplo consiste de um modelo para explicar a participação das mulheres casadas na força de trabalho.
+
+```{r}
+# Lendo o dataset
+cps91 <- wooldridge::cps91
+
+# Estimando modelo Logit
+cps91 %>%
+  glm(inlf ~ nwifeinc + educ + exper + I(exper^2) +
+        age + kidlt6 + kidge6,
+      family = binomial(link = "logit"),
+      data = .) %>%
+  summary()
+```
+
+## Probit
+
+```{r}
+# Estimando modelo Probit
+cps91 %>%
+  glm(inlf ~ nwifeinc + educ + exper + I(exper^2) +
+        age + kidlt6 + kidge6,
+      family = binomial(link = "probit"),
+      data = .) %>%
+  summary()
+```
+
+# Dicas para Continuar os Estudos
+
+O R é uma ferramenta muito poderosa e oferece diversos recursos que não foram abordados neste minicurso. O intuito desde capítulo é dar dicas de como continuar aprendendo e aperfeiçoando suas habilidades com o R. 
+
+Dentre os assuntos que podem ser explorados estão a criação de relatórios utilizando Rmarkdown, a automatização de tarefas utilizando estruturas de repetição e desvios condicionais, a construção de fluxos de trabalho reprodutíveis utilizando o Github, dentre outros. 
+
+## Recursos
+
+### Documentação
+
+Como dito anteriormente, a documentação é a fonte primária para consultar o funcionamento de funções e pacotes. Sempre consulte a documentação quando for usar uma nova função.
+
+Além da documentação de funções, acessível diretamente pelo RStudio, você pode acessar a documentação de pacotes no CRAN (*Comprehensive R Archive Network*). Para tanto, basta pesquisar no Google "*nome do pacote* + cran". Nessa página você encontrá todas as informações sobre o pacote de seu interesse, inclusive o manual de referência e outras dicas de uso.
+
+### Sites
+
+Alguns sites são bastante úteis para continuar aprendendo R, tirar dúvidas ou encontrar bases de dados. Aqui citamos alguns deles.
+
+* [**Stack Overflow**](https://stackoverflow.com/): Comunidade internacional de programadores que funciona como um fórum contendo milhões de respostas de dúvidas sobre as mais diversas linguagens, inclusive o R. Caso tenha alguma dúvida, vale consultar se alguém já perguntou algo parecido, ou se cadastrar na comunidade e perguntar você mesmo. Para melhores resultados, utilizar a versão em inglês.
+
+* [**ChatGPT**](https://openai.com/blog/chatgpt): Através de diálogos por texto com essa IA, você pode tirar dúvidas sobre programação e ter exemplos de código reprodutiveis em R. Cuidado pois algumas vezes ele inventa funções que não existem, mas, no geral, é uma excelente ferramenta.
+
+* [**Base dos Dados**](https://basedosdados.org/): Iniciativa brasileira que tem como objetivo facilitar o acesso a dados. No site você encontra uma ampla variedade de bases, já organizadas e padronizadas.
+
+* [**The R Graph Gallery**](https://r-graph-gallery.com/): Se precisar de ajuda para criar visualizações de alto nível, esse é o local ideal. Diversos tipos de gráficos, organizados em categoria, e com código reprodutível focado no `ggplot2`.
+
+### Youtube
+
+O YouTube é uma fonte enorme de informações sobre programação em R. Aqui alguns canais que podem ajudar na sua jornada.
+
+* [**Fernanda Peres**](https://www.youtube.com/@FernandaPeres): Nesse canal você encontrará muita informação sobre estatística usando Excel, R e SPSS. A Fernanda ensina a utilizar ferramentas e realizar uma ampla variedade de testes estatísticos. Para uma visão geral, dê uma olhada na playlist [Curso de Estatística Aplicada no R](https://www.youtube.com/playlist?list=PLOw62cBQ5j9VE9X4cCCfFMjW_hhEAJUhU). Caso queira dar os primeiros passos no R Markdown, recomendo a série de cinco vídeos intitualada [R Markdown](https://www.youtube.com/playlist?list=PLOw62cBQ5j9VV0WR533an6wmh9dZFUFKJ) sobre o tema.
+
+* [**Curso-R**](https://www.youtube.com/@CursoR6/featured): O canal possui muitos vídeos sobre ciência de dados e R, indo do nível inciante ao avançado.
+
+* [**Econometrics, Causality, and Conding with Dr. HK**](https://www.youtube.com/@NickHuntingtonKlein): Caso deseje aprender R com ênfase em aplicações em economia e econometria, recomendo a playlist [Introduction to R for Economists](https://www.youtube.com/playlist?list=PLcTBLulJV_AIuXCxr__V8XAzWZosMQIfW).
+
+* [**econometricsacademy**](https://www.youtube.com/@econometricsacademy): O canal foca no ensino de econometria utilizando diferentes pacotes estatísiticos, inclusive o R. Para aprender aplicações em econometria, confira a playlist [Econometrics in R](https://www.youtube.com/playlist?list=PLRW9kMvtNZOivwMSX3H6ZUmiw_D_c95MU).
+
+* [**John Little**](https://www.youtube.com/@JohnLittle1/featured): O dono do canal é um cientista de dados e bibliotecário da Univesidade Duke, nos EUA. Os vídeos enfatizam o `tidyverse` e a visualização de dados. Um vídeo particularmente interessante é o seminário [Designing a Reproducible Workflow with R and GitHub](https://www.youtube.com/watch?v=Cn-72tbRNFc&t=4477s) em que ensina como integrar o R a ferramenta de versionamento de código Git e a ao repositório Github. Além disso, ensina também o passo-a-passo para a construção de um fluxo de trabalho reprodutível em R.
+
+### Livros
+
+Informações mais aprofundadas podem ser encontradas em livros gratuitamente disponibilizados online pela gigantesca comunidade de profissionais e acadêmicos que se dedicam a estudar e ensinar R.
+
+
+
+* [**R for Data Science**](https://r4ds.had.co.nz/): Manual obrigatório para quem deseja aprender R como ferramenta para análise de dados com ênfase no `tidyverse`. 
+
+* [**Hands-On Programming with R**](https://rstudio-education.github.io/hopr/index.html): Do mesmo autor do livro anterior, este enfatiza uma abordagem mais geral sobre a linguagem R. Interessante para quem deseja se aprofundar na linguagem, seu funcionamento e suas possibilidades para atividades de automação e aprender sobre tipos de dados, estruturas de repetição, desvios condicionais, contrução de funções etc.
+
+* [**Programming with R**](https://swcarpentry.github.io/r-novice-inflammation/): Mais uma opção para aprender sobre o funcionamento da linguagem R de forma ampla.
+
+* [**Introduction to Econometrics with R**](https://www.econometrics-with-r.org/index.html): indicado para aqueles que desejam se aprofundar no uso de R para econometria. O livro apresenta exemplos em código, assim como explicações teóricas.
+
+* [**R Markdown: The Definitive Guide**](https://bookdown.org/yihui/rmarkdown/): Manual contendo informações sobre a construção de documentos utilizando o R e o RStudio.
